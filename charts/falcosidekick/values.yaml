@@ -14,7 +14,7 @@ image:
   # -- The image repository to pull from
   repository: falcosecurity/falcosidekick
   # -- The image tag to pull
-  tag: 2.28.0
+  tag: 2.31.1
   # -- The image pull policy
   pullPolicy: IfNotPresent
 
@@ -44,24 +44,113 @@ podSecurityPolicy:
 # -- Name of the priority class to be used by the Sidekickpods, priority class needs to be created beforehand
 priorityClassName: ""
 
+# -- custom labels to add to all resources
+customLabels: {}
+
+# -- custom annotations to add to all resources
+customAnnotations: {}
+
 # -- additions labels on the pods
 podLabels: {}
 # -- additions annotations on the pods
 podAnnotations: {}
+
+serviceMonitor:
+  # -- enable the deployment of a Service Monitor for the Prometheus Operator.
+  enabled: false
+  # -- specify Additional labels to be added on the Service Monitor.
+  additionalLabels: {}
+  # -- specify a user defined interval. When not specified Prometheus default interval is used.
+  interval: ""
+  # -- specify a user defined scrape timeout. When not specified Prometheus default scrape timeout is used.
+  scrapeTimeout: ""
+    # -- allows setting additional properties on the endpoint such as relabelings, metricRelabelings etc.
+  additionalProperties: {}
+
+prometheusRules:
+  # -- enable the creation of PrometheusRules for alerting
+  enabled: false
+  alerts:
+    warning:
+      # -- enable the high rate rule for the warning events
+      enabled: true
+      # -- rate interval for the high rate rule for the warning events
+      rate_interval: "5m"
+      # -- threshold for the high rate rule for the warning events
+      threshold: 0
+    error:
+      # -- enable the high rate rule for the error events
+      enabled: true
+      # -- rate interval for the high rate rule for the error events
+      rate_interval: "5m"
+      # -- threshold for the high rate rule for the error events
+      threshold: 0
+    critical:
+      # -- enable the high rate rule for the critical events
+      enabled: true
+      # -- rate interval for the high rate rule for the critical events
+      rate_interval: "5m"
+      # -- threshold for the high rate rule for the critical events
+      threshold: 0
+    alert:
+      # -- enable the high rate rule for the alert events
+      enabled: true
+      # -- rate interval for the high rate rule for the alert events
+      rate_interval: "5m"
+      # -- threshold for the high rate rule for the alert events
+      threshold: 0
+    emergency:
+      # -- enable the high rate rule for the emergency events
+      enabled: true
+      # -- rate interval for the high rate rule for the emergency events
+      rate_interval: "5m"
+      # -- threshold for the high rate rule for the emergency events
+      threshold: 0
+    output:
+      # -- enable the high rate rule for the errors with the outputs
+      enabled: true
+      # -- rate interval for the high rate rule for the errors with the outputs
+      rate_interval: "5m"
+      # -- threshold for the high rate rule for the errors with the outputs
+      threshold: 0
+    additionalAlerts: {}
+
+# -- grafana contains the configuration related to grafana.
+grafana:
+  # -- dashboards contains configuration for grafana dashboards.
+  dashboards:
+    # -- enabled specifies whether the dashboards should be deployed.
+    enabled: false
+    # --configmaps to be deployed that contain a grafana dashboard.
+    configMaps:
+      # -- falcosidekick contains the configuration for falcosidekick's dashboard.
+      falcosidekick:
+        # -- name specifies the name for the configmap.
+        name: falcosidekick-grafana-dashboard
+        # -- namespace specifies the namespace for the configmap.
+        namespace: ""
+        # -- folder where the dashboard is stored by grafana.
+        folder: ""
 
 config:
   # -- Existing secret with configuration
   existingSecret: ""
   # -- Extra environment variables
   extraEnv: []
+  # -- Extra command-line arguments
+  extraArgs: []
   # -- DEBUG environment variable
   debug: false
   # -- a list of escaped comma separated custom fields to add to falco events, syntax is "key:value\,key:value"
   customfields: ""
   # -- a list of escaped comma separated Go templated fields to add to falco events, syntax is "key:template\,key:template"
   templatedfields: ""
+  # -- a list of escaped comma separated custom tags to add to falco events, syntax is "tag\,tag"
+  customtags: ""
   # -- if not empty, the brackets in keys of Output Fields are replaced
   bracketreplacer: ""
+  # if not empty, allow to change the format of the output field. (example: "<timestamp>: <priority> <output> <custom_fields> <templated_fields>") (default: "<timestamp>: <priority> <output>")
+  outputFieldFormat: ""
   # -- folder which will used to store client.crt, client.key and ca.crt files for mutual tls for outputs, will be deprecated in the future (default: "/etc/certs")
   mutualtlsfilespath: "/etc/certs"
 
@@ -71,6 +160,10 @@ config:
     # -- client key file for mutual TLS client certification, takes priority over mutualtlsfilespath if not empty
     keyfile: ""
     # -- CA certification file for server certification for mutual TLS authentication, takes priority over mutualtlsfilespath if not empty
+    cacertfile: ""
+
+  tlsclient:
+    # -- CA certificate file for server certification on TLS connections, appended to the system CA pool if not empty
     cacertfile: ""
 
   tlsserver:
@@ -166,13 +259,23 @@ config:
   datadog:
     # -- Datadog API Key, if not `empty`, Datadog output is *enabled*
     apikey: ""
-    # -- minimum priority of event to use this output, order is `emergency\|alert\|critical\|error\|warning\|notice\|informational\|debug or ""`
-    minimumpriority: ""
     # -- Datadog host. Override if you are on the Datadog EU site. Defaults to american site with "<https://api.datadoghq.com>"
     host: ""
+    # -- minimum priority of event to use this output, order is `emergency\|alert\|critical\|error\|warning\|notice\|informational\|debug or ""`
+    minimumpriority: ""
+
+  datadoglogs:
+    # -- Datadog API Key, if not empty, Datadog Logs output is enabled
+    apikey: ""
+    # -- Datadog host. Override if you are on the Datadog EU site. Defaults to american site with "https://http-intake.logs.datadoghq.com/"
+    host: ""
+    # -- The name of the application or service generating the log events.
+    service: ""
+    # -- minimum priority of event for using this output, order is emergency|alert|critical|error|warning|notice|informational|debug or "" (default)
+    minimumpriority: ""
 
   alertmanager:
-    # -- AlertManager <http://host:port>, if not `empty`, AlertManager is *enabled*
+    # -- Comma separated list of http://{domain or ip}:{port} that will all receive the payload, if not empty, Alertmanager output is enabled
     hostport: ""
     # -- alertmanager endpoint on which falcosidekick posts alerts, choice is: `"/api/v1/alerts" or "/api/v2/alerts" , default is "/api/v1/alerts"`
     endpoint: "/api/v1/alerts"
@@ -202,18 +305,42 @@ config:
     index: "falco"
     # -- Elasticsearch document type
     type: "_doc"
-    # date suffix for index rotation : daily, monthly, annually, none
+    # -- Optional ingest pipeline name
+    pipeline: ""
+    # -- Date suffix for index rotation : daily, monthly, annually, none
     suffix: "daily"
-    # -- use this username to authenticate to Elasticsearch if the username is not empty
+    # -- Use this APIKey to authenticate to Elasticsearch if the APIKey is not empty (default: "")
+    apikey: ""
+    # -- Use this username to authenticate to Elasticsearch if the username is not empty
     username: ""
-    # -- use this password to authenticate to Elasticsearch if the password is not empty
+    # -- Use this password to authenticate to Elasticsearch if the password is not empty
     password: ""
+    # -- Replace . by _ to avoid mapping conflicts, force to true if createindextemplate==true (default: false)
+    flattenfields: false
+    # -- Create an index template (default: false)
+    createindextemplate: false
+    # -- Number of shards set by the index template (default: 3)
+    numberofshards: 3
+    # -- Number of replicas set by the index template (default: 3)
+    numberofreplicas: 3
     # -- a list of comma separated custom headers to add, syntax is "key:value,key:value"
     customheaders: ""
     # -- if true, checkcert flag will be ignored (server cert will always be checked)
     mutualtls: false
     # -- check if ssl certificate of the output is valid
     checkcert: true
+    # -- if true enables gzip compression for http requests (default: false)
+    enablecompression: false
+    # -- max number of concurrent http requests (default: 1)
+    maxconcurrentrequests: 1
+    # -- batching configuration, improves throughput dramatically utilizing _bulk Elasticsearch API
+    batching:
+      # -- if true enables batching
+      enabled: true
+      # -- batch size in bytes (default: 5 MB) (use string to avoid the conversion into float64 by helm)
+      batchsize: "5242880"
+      # -- batch fush interval (default: 1s)
+      flushinterval: 1s
     # -- minimum priority of event to use this output, order is `emergency\|alert\|critical\|error\|warning\|notice\|informational\|debug or ""`
     minimumpriority: ""
 
@@ -250,6 +377,8 @@ config:
     endpoint: "/loki/api/v1/push"
     # -- Loki tenant, if not `empty`, Loki tenant is *enabled*
     tenant: ""
+    # -- Format for the log entry value: json, text (default)
+    format: "text"
     # -- comma separated list of fields to use as labels additionally to rule, source, priority, tags and custom_fields
     extralabels: ""
     # -- a list of comma separated custom headers to add, syntax is "key:value,key:value"
@@ -260,6 +389,18 @@ config:
     mutualtls: false
     # -- check if ssl certificate of the output is valid
     checkcert: true
+    # -- dashboard for Grafana
+    grafanaDashboard:
+      # -- enabled specifies whether this dashboard should be deployed.
+      enabled: true
+      # --configmaps to be deployed that contain a grafana dashboard.
+      configMap:
+        # -- name specifies the name for the configmap.
+        name: falcosidekick-loki-dashboard-grafana
+        # -- namespace specifies the namespace for the configmap.
+        namespace: ""
+        # -- folder where the dashboard is stored by grafana.
+        folder: ""
 
   prometheus:
     # -- comma separated list of fields to use as labels additionally to rule, source, priority, tags and custom_fields
@@ -268,6 +409,8 @@ config:
   nats:
     # -- NATS "nats://host:port", if not `empty`, NATS is *enabled*
     hostport: ""
+    # -- template for the subject, tokens <priority> and <rule> will be automatically replaced (default: falco.<priority>.<rule>)
+    subjecttemplate: "falco.<priority>.<rule>"
     # -- minimum priority of event to use this output, order is `emergency\|alert\|critical\|error\|warning\|notice\|informational\|debug or ""`
     minimumpriority: ""
     # -- if true, checkcert flag will be ignored (server cert will always be checked)
@@ -282,6 +425,8 @@ config:
     clusterid: ""
     # -- Client ID, if not empty, STAN output is *enabled*
     clientid: ""
+    # -- template for the subject, tokens <priority> and <rule> will be automatically replaced (default: falco.<priority>.<rule>)
+    subjecttemplate: "falco.<priority>.<rule>"
     # -- minimum priority of event to use this output, order is `emergency\|alert\|critical\|error\|warning\|notice\|informational\|debug or ""`
     minimumpriority: ""
     # -- if true, checkcert flag will be ignored (server cert will always be checked)
@@ -290,6 +435,8 @@ config:
     checkcert: true
 
   aws:
+    # -- Use IRSA, if true, the rolearn value will be used to set the ServiceAccount annotations and not the env var
+    useirsa: true
     # -- AWS IAM role ARN for falcosidekick service account to associate with (optionnal if you use EC2 Instance Profile)
     rolearn: ""
     # -- External id for the role to assume (optional if you use EC2 Instance Profile)
@@ -331,6 +478,10 @@ config:
       bucket: ""
       # -- AWS S3, name of prefix, keys will have format: s3://<bucket>/<prefix>/YYYY-MM-DD/YYYY-MM-DDTHH:mm:ss.s+01:00.json
       prefix: ""
+      # -- Endpoint URL that overrides the default generated endpoint, use this for S3 compatible APIs
+      endpoint: ""
+      # -- Canned ACL (x-amz-acl) to use when creating the object
+      objectcannedacl: "bucket-owner-full-control"
       # -- minimum priority of event to use this output, order is `emergency\|alert\|critical\|error\|warning\|notice\|informational\|debug or ""`
       minimumpriority: ""
     kinesis:
@@ -429,6 +580,8 @@ config:
     podIdentityClientID: ""
     # -- Azure Identity name
     podIdentityName: ""
+    # -- Azure Workload Identity Client ID
+    workloadIdentityClientID: ""
     eventHub:
       # -- Name of the space the Hub is in
       namespace: ""
@@ -826,6 +979,8 @@ config:
     token: ""
     # -- telegram Identifier of the shared chat
     chatid: ""
+    # -- Telegram individual chats within the group
+    messagethreadid: ""
     # -- check if ssl certificate of the output is valid
     checkcert: true
     # -- minimum priority of event for using this output, order is emergency|alert|critical|error|warning|notice|informational|debug or ""
@@ -867,18 +1022,121 @@ config:
     # -- a list of comma separated custom headers to add, syntax is "key:value,key:value"
     customheaders: ""
 
+  dynatrace:
+    # -- Dynatrace API token with the "logs.ingest" scope, more info : https://dt-url.net/8543sda, if not empty, Dynatrace output is enabled
+    apitoken: ""
+    # -- Dynatrace API url, use https://ENVIRONMENTID.live.dynatrace.com/api for Dynatrace SaaS and https://YOURDOMAIN/e/ENVIRONMENTID/api for Dynatrace Managed, more info : https://dt-url.net/ej43qge
+    apiurl: ""
+    # -- check if ssl certificate of the output is valid
+    checkcert: true
+    # -- minimum priority of event for using this output, order is emergency|alert|critical|error|warning|notice|informational|debug or ""
+    minimumpriority: ""
+
+  otlp:
+    traces:
+      # -- OTLP endpoint in the form of http://{domain or ip}:4318/v1/traces, if not empty, OTLP Traces output is enabled
+      endpoint: ""
+      # -- OTLP protocol http/json, http/protobuf, grpc (default: "" which uses SDK default: http/json)
+      protocol: ""
+      # -- OTLP timeout: timeout value in milliseconds (default: "" which uses SDK default: 10000)
+      timeout: 1000
+      # -- OTLP headers: list of headers to apply to all outgoing traces in the form of "some-key=some-value,other-key=other-value" (default: "")
+      headers: ""
+      # -- Set to true if you want traces to be sent synchronously (default: false)
+      synced: false
+      # -- Artificial span duration in milliseconds (default: 1000)
+      duration: 1000
+      # -- Extra env vars (override the other settings)
+      extraenvvars: {}
+        # OTEL_EXPORTER_OTLP_TRACES_TIMEOUT: 10000
+        # OTEL_EXPORTER_OTLP_TIMEOUT: 10000
+      # -- check if ssl certificate of the output is valid
+      checkcert: true
+      # -- minimum priority of event for using this output, order is emergency|alert|critical|error|warning|notice|informational|debug or ""
+      minimumpriority: ""
+    metrics:
+      # -- OTLP endpoint, typically in the form http{s}://{domain or ip}:4318/v1/metrics
+      endpoint: ""
+      # -- OTLP transport protocol to be used for metrics data; it can be "grpc" or "http/protobuf" (default: "grpc")
+      protocol: "grpc"
+      # -- OTLP timeout for outgoing metrics in milliseconds (default: "" which uses SDK default: 10000)
+      timeout: 1000
+      # -- List of headers to apply to all outgoing metrics in the form of "some-key=some-value,other-key=other-value" (default: "")
+      headers: ""
+      # -- Extra env vars (override the other settings) (default: "")
+      extraenvvars: []
+        # - OTEL_EXPORTER_OTLP_METRICS_TIMEOUT: 10000
+        # - OTEL_EXPORTER_OTLP_TIMEOUT: 10000
+      # -- Comma-separated list of fields to use as labels additionally to source, priority, rule, hostname, tags, k8s_ns_name, k8s_pod_name and custom_fields
+      extraattributes: ""
+      # -- Set to false if you want to skip TLS certificate validation (only with https) (default: true)
+      checkcert: true
+      # -- Minimum priority of event for using this output, order is emergency|alert|critical|error|warning|notice|informational|debug or "" (default: "")
+      minimumpriority: ""
+
+  sumologic:
+    # -- Sumologic HTTP Source URL, if not empty, Sumologic output is enabled
+    receiverURL: ""
+    # -- Override the default Sumologic Source Category
+    sourceCategory: ""
+    # -- Override the default Sumologic Source Host
+    sourceHost: ""
+    # -- Override the default Sumologic Source Name
+    name: ""
+    # -- minimum priority of event for using this output, order is emergency|alert|critical|error|warning|notice|informational|debug or "" (default)
+    minimumpriority: ""
+    # -- check if ssl certificate of the output is valid (default: true)
+    checkcert: true
+
+  quickwit:
+    # -- http://{domain or ip}:{port}, if not empty, Quickwit output is enabled
+    hostport: ""
+    # -- API endpoint (containing the API version, overideable in case of quickwit behind a reverse proxy with URL rewriting)
+    apiendpoint: "/api/v1"
+    # -- Index
+    index: "falco"
+    # -- Version of quickwi
+    version: "0.7"
+    # -- Autocreate a falco index mapping if it doesn't exists
+    autocreateindex: false
+    # -- a list of comma separated custom headers to add, syntax is "key:value,key:value"
+    customHeaders: ""
+    # -- minimum priority of event to use this output, order is `emergency\|alert\|critical\|error\|warning\|notice\|informational\|debug or ""`
+    minimumpriority: ""
+    # -- if true, checkcert flag will be ignored (server cert will always be checked)
+    mutualtls: false
+    # --  check if ssl certificate of the output is valid
+    checkcert: true
+
+  webex:
+    # -- Webex WebhookURL, if not empty, Webex output is enabled
+    webhookurl: ""
+    # -- minimum priority of event to use this output, order is `emergency\|alert\|critical\|error\|warning\|notice\|informational\|debug or ""`
+    minimumpriority: ""
+
+  talon:
+    # -- Talon address, if not empty, Talon output is enabled
+    address: ""
+    # -- minimum priority of event to use this output, order is `emergency\|alert\|critical\|error\|warning\|notice\|informational\|debug or ""`
+    minimumpriority: ""
+    # --  check if ssl certificate of the output is valid
+    checkcert: true
+
 service:
   # -- Service type
   type: ClusterIP
   # -- Service port
   port: 2801
   # -- Service annotations
-  annotations: {}
+  annotations:
+    prometheus.io/scrape: "true"
     # networking.gke.io/load-balancer-type: Internal
 
 ingress:
   # -- Whether to create the ingress
   enabled: false
+  # -- ingress class name
+  ingressClassName: ""
   # -- Ingress annotations
   annotations: {}
     # kubernetes.io/ingress.class: nginx
@@ -972,6 +1230,20 @@ webui:
     # -- The web UI image pull policy
     pullPolicy: IfNotPresent
 
+  # -- Web UI wait-redis initContainer
+  initContainer:
+    image:
+      # -- wait-redis initContainer image registry to pull from
+      registry: docker.io
+      # -- wait-redis initContainer image repository to pull from
+      repository: redis/redis-stack
+      # -- wait-redis initContainer image tag to pull
+      tag: "7.2.0-v11"
+    # -- wait-redis initContainer securityContext
+    securityContext: {}
+    # -- wait-redis initContainer resources
+    resources: {}
+
   # -- Web UI pod securityContext
   podSecurityContext:
     runAsUser: 1234
@@ -1004,6 +1276,8 @@ webui:
   ingress:
     # -- Whether to create the Web UI ingress
     enabled: false
+    # -- ingress class name
+    ingressClassName: ""
     # --  Web UI ingress annotations
     annotations: {}
       # kubernetes.io/ingress.class: nginx
@@ -1041,6 +1315,8 @@ webui:
     enabled: false
     # -- The URL of the external Redis database with RediSearch > v2
     url: ""
+    # -- Set the password of the external Redis
+    password: ""
     # --  The port of the external Redis database with RediSearch > v2
     port: 6379
   redis:
@@ -1052,9 +1328,14 @@ webui:
       # -- The web UI Redis image repository to pull from
       repository: redis/redis-stack
       # -- The web UI Redis image tag to pull from
-      tag: "6.2.6-v3"
+      tag: "7.2.0-v11"
       # -- The web UI image pull policy
       pullPolicy: IfNotPresent
+
+    # -- List of Custom config overrides for Redis
+    customConfig: {}
+      # - maxmemory-policy allkeys-lfu
+      # - maxmemory 4096mb
 
     # -- Existing secret with configuration
     existingSecret: ""
@@ -1064,6 +1345,12 @@ webui:
 
     # -- Name of the priority class to be used by the Web UI Redis pods, priority class needs to be created beforehand
     priorityClassName: ""
+
+    # -- custom labels to add to all resources
+    customLabels: {}
+
+    # -- custom annotations to add to all resources
+    customAnnotations: {}
 
     # -- additions labels on the pods
     podLabels: {}
