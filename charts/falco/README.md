@@ -583,7 +583,7 @@ If you use a Proxy in your cluster, the requests between `Falco` and `Falcosidek
 
 ## Configuration
 
-The following table lists the main configurable parameters of the falco chart v5.0.1 and their default values. See [values.yaml](./values.yaml) for full list.
+The following table lists the main configurable parameters of the falco chart v6.0.0 and their default values. See [values.yaml](./values.yaml) for full list.
 
 ## Values
 
@@ -597,11 +597,11 @@ The following table lists the main configurable parameters of the falco chart v5
 | certs.existingSecret | string | `""` | Existing secret containing the following key, crt and ca as well as the bundle pem. |
 | certs.server.crt | string | `""` | Certificate used by gRPC and webserver. |
 | certs.server.key | string | `""` | Key used by gRPC and webserver. |
-| collectors.containerEngine | object | `{"enabled":false,"engines":{"bpm":{"enabled":true},"containerd":{"enabled":true,"sockets":["/run/containerd/containerd.sock"]},"cri":{"enabled":true,"sockets":["/run/crio/crio.sock"]},"docker":{"enabled":true,"sockets":["/var/run/docker.sock"]},"libvirt_lxc":{"enabled":true},"lxc":{"enabled":true},"podman":{"enabled":true,"sockets":["/run/podman/podman.sock"]}},"hooks":["create"],"labelMaxLen":100,"pluginRef":"ghcr.io/falcosecurity/plugins/plugin/container:0.2.4","withSize":false}` | This collector is the new container engine collector that replaces the old docker, containerd, crio and podman collectors. It is designed to collect metadata from various container engines and provide a unified interface through the container plugin. When enabled, it will deploy the container plugin and use it to collect metadata from the container engines. Keep in mind that the old collectors (docker, containerd, crio, podman) will use the container plugin to collect metadata under the hood. |
+| collectors.containerEngine | object | `{"enabled":false,"engines":{"bpm":{"enabled":true},"containerd":{"enabled":true,"sockets":["/run/containerd/containerd.sock"]},"cri":{"enabled":true,"sockets":["/run/crio/crio.sock"]},"docker":{"enabled":true,"sockets":["/var/run/docker.sock"]},"libvirt_lxc":{"enabled":true},"lxc":{"enabled":true},"podman":{"enabled":true,"sockets":["/run/podman/podman.sock"]}},"hooks":["create"],"labelMaxLen":100,"pluginRef":"ghcr.io/falcosecurity/plugins/plugin/container:0.2.6","withSize":false}` | This collector is the new container engine collector that replaces the old docker, containerd, crio and podman collectors. It is designed to collect metadata from various container engines and provide a unified interface through the container plugin. When enabled, it will deploy the container plugin and use it to collect metadata from the container engines. Keep in mind that the old collectors (docker, containerd, crio, podman) will use the container plugin to collect metadata under the hood. |
 | collectors.containerEngine.enabled | bool | `false` | Enable Container Engine support. |
 | collectors.containerEngine.hooks | list | `["create"]` | hooks specify the hooks that will be used to collect metadata from the container engine. The available hooks are: create, start. |
 | collectors.containerEngine.labelMaxLen | int | `100` | labelMaxLen is the maximum length of the labels that can be used in the container engine plugin. container labels larger than this value won't be collected. |
-| collectors.containerEngine.pluginRef | string | `"ghcr.io/falcosecurity/plugins/plugin/container:0.2.4"` | pluginRef is the OCI reference for the container plugin. It could be a full reference such as "ghcr.io/falcosecurity/plugins/plugin/container:0.2.0". Or just name + tag: containerengine:0.2.0. |
+| collectors.containerEngine.pluginRef | string | `"ghcr.io/falcosecurity/plugins/plugin/container:0.2.6"` | pluginRef is the OCI reference for the container plugin. It could be a full reference such as "ghcr.io/falcosecurity/plugins/plugin/container:0.2.0". Or just name + tag: containerengine:0.2.0. |
 | collectors.containerEngine.withSize | bool | `false` | withSize specifies whether to enable container size inspection, which is inherently slow. |
 | collectors.containerd | object | `{"enabled":true,"socket":"/run/containerd/containerd.sock"}` | This collector is deprecated and will be removed in the future. Please use the containerEngine collector instead. |
 | collectors.containerd.enabled | bool | `true` | Enable ContainerD support. |
@@ -657,6 +657,7 @@ The following table lists the main configurable parameters of the falco chart v5
 | extra.args | list | `[]` | Extra command-line arguments. |
 | extra.env | list | `[]` | Extra environment variables that will be pass onto Falco containers. |
 | extra.initContainers | list | `[]` | Additional initContainers for Falco pods. |
+| falco-talon | object | `{}` | It must be used in conjunction with the response_actions.enabled option. |
 | falco.append_output[0].suggested_output | bool | `true` |  |
 | falco.base_syscalls | object | `{"custom_set":[],"repair":false}` | - [Suggestions]  NOTE: setting `base_syscalls.repair: true` automates the following suggestions for you.  These suggestions are subject to change as Falco and its state engine evolve.  For execve* events: Some Falco fields for an execve* syscall are retrieved from the associated `clone`, `clone3`, `fork`, `vfork` syscalls when spawning a new process. The `close` syscall is used to purge file descriptors from Falco's internal thread / process cache table and is necessary for rules relating to file descriptors (e.g. open, openat, openat2, socket, connect, accept, accept4 ... and many more)  Consider enabling the following syscalls in `base_syscalls.custom_set` for process rules: [clone, clone3, fork, vfork, execve, execveat, close]  For networking related events: While you can log `connect` or `accept*` syscalls without the socket syscall, the log will not contain the ip tuples. Additionally, for `listen` and `accept*` syscalls, the `bind` syscall is also necessary.  We recommend the following as the minimum set for networking-related rules: [clone, clone3, fork, vfork, execve, execveat, close, socket, bind, getsockopt]  Lastly, for tracking the correct `uid`, `gid` or `sid`, `pgid` of a process when the running process opens a file or makes a network connection, consider adding the following to the above recommended syscall sets: ... setresuid, setsid, setuid, setgid, setpgid, setresgid, setsid, capset, chdir, chroot, fchdir ... |
 | falco.buffered_outputs | bool | `false` | Enabling buffering for the output queue can offer performance optimization, efficient resource usage, and smoother data flow, resulting in a more reliable output mechanism. By default, buffering is disabled (false). |
@@ -750,8 +751,6 @@ The following table lists the main configurable parameters of the falco chart v5
 | falcosidekick.enabled | bool | `false` | Enable falcosidekick deployment. |
 | falcosidekick.fullfqdn | bool | `false` | Enable usage of full FQDN of falcosidekick service (useful when a Proxy is used). |
 | falcosidekick.listenPort | string | `""` | Listen port. Default value: 2801 |
-| falcotalon | object | `{"enabled":false}` | For configuration values, see https://github.com/falcosecurity/charts/blob/master/charts/falco-talon/values.yaml |
-| falcotalon.enabled | bool | `false` | Enable falcotalon deployment. |
 | fullnameOverride | string | `""` | Same as nameOverride but for the fullname. |
 | grafana | object | `{"dashboards":{"configMaps":{"falco":{"folder":"","name":"falco-grafana-dashboard","namespace":""}},"enabled":false}}` | grafana contains the configuration related to grafana. |
 | grafana.dashboards | object | `{"configMaps":{"falco":{"folder":"","name":"falco-grafana-dashboard","namespace":""}},"enabled":false}` | dashboards contains configuration for grafana dashboards. |
@@ -805,6 +804,7 @@ The following table lists the main configurable parameters of the falco chart v5
 | rbac.create | bool | `true` |  |
 | resources.limits | object | `{"cpu":"1000m","memory":"1024Mi"}` | Maximum amount of resources that Falco container could get. If you are enabling more than one source in falco, than consider to increase the cpu limits. |
 | resources.requests | object | `{"cpu":"100m","memory":"512Mi"}` | Although resources needed are subjective on the actual workload we provide a sane defaults ones. If you have more questions or concerns, please refer to #falco slack channel for more info about it. |
+| responseActions | object | `{"enabled":false}` | Enable the response actions using Falco Talon. |
 | scc.create | bool | `true` | Create OpenShift's Security Context Constraint. |
 | serviceAccount.annotations | object | `{}` | Annotations to add to the service account. |
 | serviceAccount.create | bool | `true` | Specifies whether a service account should be created. |
