@@ -2,6 +2,16 @@ apiVersion: v1
 entries:
   event-generator:
   - apiVersion: v2
+    appVersion: 0.13.0
+    created: "2026-05-19T11:32:37.658541174Z"
+    description: A Helm chart used to deploy the event-generator in Kubernetes cluster.
+    digest: 888c397d41cf7b84d31c31ab26a3b03fd424d00ff91ed69874bbe275b3598137
+    name: event-generator
+    type: application
+    urls:
+    - https://github.com/funkypenguin/charts-1/releases/download/event-generator-0.4.0/event-generator-0.4.0.tgz
+    version: 0.4.0
+  - apiVersion: v2
     appVersion: 0.10.0
     created: "2025-05-25T11:32:37.972816613Z"
     description: A Helm chart used to deploy the event-generator in Kubernetes cluster.
@@ -4202,4 +4212,4 @@ entries:
     urls:
     - https://github.com/funkypenguin/charts-1/releases/download/k8s-metacollector-0.1.10/k8s-metacollector-0.1.10.tgz
     version: 0.1.10
-generated: "2026-05-15T17:32:34.256397936Z"
+generated: "2026-05-19T11:32:37.658954335Z"
